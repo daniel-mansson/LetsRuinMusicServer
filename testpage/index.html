@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+
+    var socket = new WebSocket("ws://localhost:12001");
+
+    socket.onmessage = function(event) {
+        alert("Received data from websocket: " + event.data);
+    }
+
+    socket.onopen = function(event) {
+        alert("Web Socket opened");
+        socket.send("{\"hello\":\"World\"}");
+    };
+
+    socket.onclose = function(event) {
+        alert("Web Socket closed ");
+    };
+
+</script>
+</head>
+<body>
+
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+	"connector": {
+		"web_port": "12001",
+		"net_port": "12002"
+	},
+	"database": {
+		"blaha" : 32
+	}
+}

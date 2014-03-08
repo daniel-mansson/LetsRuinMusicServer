@@ -1,0 +1,1 @@
+"./depends/vert.x-2.1RC1/bin/vertx.bat" run test.Starter -cp "./bin" -conf "./config/config.json"
