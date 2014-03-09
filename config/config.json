@@ -1,7 +1,8 @@
 {
 	"connector": {
 		"web_port": "12001",
-		"net_port": "12002"
+		"net_port": "12002",
+		"step_interval_time": 300
 	},
 	"database": {
 		"database_driver" : "com.mysql.jdbc.Driver",

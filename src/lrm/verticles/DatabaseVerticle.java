@@ -24,6 +24,7 @@ public class DatabaseVerticle extends Verticle {
 	private ConnectionInfo connectionInfo;
 	private TreeMap<Integer, ClientState> clientStates;
 	private EventBus eventBus;
+	private boolean anyChange;
 
 	public DatabaseVerticle() {
 
@@ -32,7 +33,7 @@ public class DatabaseVerticle extends Verticle {
 	@Override
 	public void start() {
 		clientStates = new TreeMap<>();
-		//JsonObject config = container.config();
+		anyChange = true;
 		JsonObject config = new JsonObject();
 
 		try {
@@ -92,7 +93,8 @@ public class DatabaseVerticle extends Verticle {
 			
 			if (id >= 0) {
 				ClientState state = clientStates.get(id);
-				
+
+				anyChange = true;
 				if (state == null) {
 					state = new ClientState(id, body, connectionInfo);
 					clientStates.put(id, state);
@@ -115,11 +117,16 @@ public class DatabaseVerticle extends Verticle {
 		@Override
 		public void handle(Message<Boolean> arg0) {
 
+			if(!anyChange)
+				return;
+			
 			for(ClientState state : clientStates.values()) {
 				JsonObject msg = state.getDiff();
 				if(msg != null)
 					eventBus.publish("out", msg);
 			}
+			
+			anyChange = false;
 		}
 	}
 }

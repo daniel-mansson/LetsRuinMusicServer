@@ -64,14 +64,13 @@ public class ClientConnector extends Verticle {
 
 		eventBus.registerHandler("out", new OutgoingDataHandler());
 
-		
+		final int stepIntervalTime = appConfig.getInteger("step_interval_time", 1000);
 		new Thread(new Runnable() {
-			
 			@Override
 			public void run() {
 				while(true) {
 					try {
-						Thread.sleep(1000);
+						Thread.sleep(stepIntervalTime);
 					} catch (InterruptedException e) {
 					}
 					

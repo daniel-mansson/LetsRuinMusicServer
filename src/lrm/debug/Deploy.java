@@ -1,10 +1,7 @@
 package lrm.debug;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -15,21 +12,11 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.stream.JsonReader;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigLoader;
-import com.hazelcast.nio.IOUtil;
-
 public class Deploy {
 
 	public static void main(String[] args) throws IOException {
 		PlatformManager pm = PlatformLocator.factory.createPlatformManager();
-
-		Gson gson = new Gson();
-
+		
 		File file = new File("config/config.json");
 	    FileInputStream fis = new FileInputStream(file);
 	    byte[] data = new byte[(int)file.length()];
