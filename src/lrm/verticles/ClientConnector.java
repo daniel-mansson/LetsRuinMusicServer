@@ -64,6 +64,21 @@ public class ClientConnector extends Verticle {
 
 		eventBus.registerHandler("out", new OutgoingDataHandler());
 
+		
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				while(true) {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+					}
+					
+					eventBus.publish("step", true);
+				}
+			}
+		}).start();
 	}
 
 	class WebConnectionHandler implements Handler<ServerWebSocket> {
@@ -93,6 +108,12 @@ public class ClientConnector extends Verticle {
 			socket.closeHandler(new Handler<Void>() {				
 				@Override
 				public void handle(Void arg0) {
+
+					JsonObject msg = new JsonObject();
+					msg.putNumber("id", socketInfo.getId());
+					msg.putBoolean("close", true);
+					eventBus.publish("database", msg);
+					
 					sockets.remove(socketInfo.getId());
 					System.out.println("Web socket connection closed (id: " + socketInfo.getId() + ")");
 				}

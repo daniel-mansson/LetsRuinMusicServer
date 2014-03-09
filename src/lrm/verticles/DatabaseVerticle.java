@@ -5,10 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Properties;
 import java.util.TreeMap;
 
@@ -35,8 +32,8 @@ public class DatabaseVerticle extends Verticle {
 	@Override
 	public void start() {
 		clientStates = new TreeMap<>();
-		JsonObject config = container.config();
-		//JsonObject config = new JsonObject();
+		//JsonObject config = container.config();
+		JsonObject config = new JsonObject();
 
 		try {
 			Class.forName(config.getString("database_driver", "com.mysql.jdbc.Driver"));
@@ -66,13 +63,14 @@ public class DatabaseVerticle extends Verticle {
 		try {
 			connectionInfo = new ConnectionInfo(connection);
 			
-		} catch (SQLException e) {
+		} catch (SQLException | IOException e) {
 			System.err.println("Error: " + e.getMessage());
 		}
 		
 
 		eventBus = vertx.eventBus();
 		eventBus.registerHandler("database", new IncomingDataHandler());
+		eventBus.registerHandler("step", new StepHandler());
 
 		System.out.println("database verticle started");
 	}
@@ -85,8 +83,10 @@ public class DatabaseVerticle extends Verticle {
 			int id = body.getInteger("id", -1);
 
 			if(body.getBoolean("close", false)){
-				if(id >= 0)
+				if(id >= 0) {
+					clientStates.get(id).destroy();
 					clientStates.remove(id);
+				}
 				return;
 			}
 			
@@ -94,12 +94,11 @@ public class DatabaseVerticle extends Verticle {
 				ClientState state = clientStates.get(id);
 				
 				if (state == null) {
-					state = new ClientState(id);
+					state = new ClientState(id, body, connectionInfo);
 					clientStates.put(id, state);
 				}
 
-				JsonObject response = state.performRequest(body, connectionInfo);
-				eventBus.publish("out", response);
+				state.performUpdate(body);
 			}
 			else {
 				JsonObject error = new JsonObject();
@@ -107,6 +106,19 @@ public class DatabaseVerticle extends Verticle {
 				error.putString("error", "Invalid client id.");
 
 				eventBus.publish("out", error);
+			}
+		}
+	}
+
+	class StepHandler implements Handler<Message<Boolean>> {
+
+		@Override
+		public void handle(Message<Boolean> arg0) {
+
+			for(ClientState state : clientStates.values()) {
+				JsonObject msg = state.getDiff();
+				if(msg != null)
+					eventBus.publish("out", msg);
 			}
 		}
 	}
