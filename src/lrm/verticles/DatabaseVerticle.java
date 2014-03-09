@@ -5,12 +5,15 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.TreeMap;
 
 import lrm.state.ClientState;
+import lrm.state.ConnectionInfo;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
@@ -21,7 +24,8 @@ import org.vertx.java.platform.Verticle;
 public class DatabaseVerticle extends Verticle {
 
 	private Connection connection;
-	private static ConcurrentMap<Integer, ClientState> clientStates = new ConcurrentHashMap<>();
+	private ConnectionInfo connectionInfo;
+	private TreeMap<Integer, ClientState> clientStates;
 	private EventBus eventBus;
 
 	public DatabaseVerticle() {
@@ -30,9 +34,16 @@ public class DatabaseVerticle extends Verticle {
 
 	@Override
 	public void start() {
+		clientStates = new TreeMap<>();
 		JsonObject config = container.config();
-		eventBus = vertx.eventBus();
+		//JsonObject config = new JsonObject();
 
+		try {
+			Class.forName(config.getString("database_driver", "com.mysql.jdbc.Driver"));
+		} catch (ClassNotFoundException e1) {
+			System.err.println(e1.getMessage());
+		}
+		
 		Properties dbprop = new Properties();
 		try {
 			dbprop.load(new FileInputStream(config.getString("database_config", "config/database.properties")));
@@ -44,14 +55,23 @@ public class DatabaseVerticle extends Verticle {
 			System.err.println("Error: " + e.getMessage());
 		}
 
-		String dburl = config.getString("database_url");
+		String dburl = config.getString("database_url", "jdbc:mysql://localhost:3306/lrm");
 		try {
 			connection = DriverManager.getConnection(dburl, dbprop);
 		}
 		catch (SQLException e) {
 			System.err.println("Error: " + e.getMessage());
 		}
+		
+		try {
+			connectionInfo = new ConnectionInfo(connection);
+			
+		} catch (SQLException e) {
+			System.err.println("Error: " + e.getMessage());
+		}
+		
 
+		eventBus = vertx.eventBus();
 		eventBus.registerHandler("database", new IncomingDataHandler());
 
 		System.out.println("database verticle started");
@@ -78,7 +98,7 @@ public class DatabaseVerticle extends Verticle {
 					clientStates.put(id, state);
 				}
 
-				JsonObject response = state.performRequest(body, connection);
+				JsonObject response = state.performRequest(body, connectionInfo);
 				eventBus.publish("out", response);
 			}
 			else {

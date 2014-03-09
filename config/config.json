@@ -4,6 +4,8 @@
 		"net_port": "12002"
 	},
 	"database": {
-		"blaha" : 32
+		"database_driver" : "com.mysql.jdbc.Driver",
+		"database_url" : "jdbc:mysql://localhost:3306/lrm",
+		"database_config" : "config/database.properties"
 	}
 }

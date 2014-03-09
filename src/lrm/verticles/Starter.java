@@ -16,8 +16,8 @@ public class Starter extends Verticle{
 		JsonObject connectorConfig = appConfig.getObject("connector");
 		JsonObject databaseConfig = appConfig.getObject("database");
 
-		container.deployVerticle("test.ClientConnector", connectorConfig);
-		container.deployWorkerVerticle("test.DatabaseVerticle", databaseConfig);
+		container.deployVerticle("lrm.verticles.ClientConnector", connectorConfig);
+		container.deployWorkerVerticle("lrm.verticles.DatabaseVerticle", databaseConfig);
 		
 	}
 }

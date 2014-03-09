@@ -1,6 +1,5 @@
 package lrm.state;
 
-import java.sql.Connection;
 import java.util.Random;
 
 import org.vertx.java.core.json.JsonArray;
@@ -13,7 +12,7 @@ public class ClientState {
 		this.id = id;
 	}
 
-	public JsonObject performRequest(JsonObject body, Connection connection) {
+	public JsonObject performRequest(JsonObject body, ConnectionInfo connectionInfo) {
 		JsonObject response = new JsonObject();
 		response.putNumber("id", id);
 
