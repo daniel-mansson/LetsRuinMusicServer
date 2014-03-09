@@ -9,12 +9,13 @@ Server for the project https://github.com/pogestudio/LetsRuinMusic
 Preparation
 ==================
 
-Unzip dependencies in the folder depends/
+Unzip the dependencies in the folder depends/
 
 Requires a MySQL server running. 
 Manual preparation work is still needed. There has to be two tables, states and clients:
 The rest should be configurable from config/config.json
 
+```
 create table states
 (
 ID INT NOT NULL,
@@ -34,7 +35,7 @@ H INT,
 NAME VARCHAR(64)
 );
 INSERT INTO clients VALUES (1,0,0,0,0,"Global");
-
+```
 
 ==================
 Running the server
