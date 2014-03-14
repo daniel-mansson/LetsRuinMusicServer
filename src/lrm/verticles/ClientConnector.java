@@ -28,7 +28,6 @@ public class ClientConnector extends Verticle {
 
 	@Override
 	public void start() {
-		System.out.println("client connector");
 		nextSocketId = 1;
 		sockets = new TreeMap<>();
 
@@ -78,6 +77,9 @@ public class ClientConnector extends Verticle {
 				}
 			}
 		}).start();
+		
+
+		System.out.println("Client connector started.");
 	}
 
 	class WebConnectionHandler implements Handler<ServerWebSocket> {

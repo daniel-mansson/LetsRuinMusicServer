@@ -35,16 +35,7 @@ public class Deploy {
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		}
-		pm.deployVerticle("lrm.verticles.Starter", conf, cp, 1, null,
-				new Handler<AsyncResult<String>>() {
-
-					@Override
-					public void handle(AsyncResult<String> arg0) {
-						System.out.println(arg0.succeeded());
-						System.out.println(arg0.cause());
-						System.out.println(arg0.result());
-					}
-				});
+		pm.deployVerticle("lrm.verticles.Starter", conf, cp, 1, null, null);
 
 		while (true) {
 			try {

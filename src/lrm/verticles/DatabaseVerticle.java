@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 import java.util.TreeMap;
 
@@ -62,18 +63,28 @@ public class DatabaseVerticle extends Verticle {
 		}
 		
 		try {
+			Statement s = connection.createStatement();
+			s.execute("CREATE TABLE IF NOT EXISTS states (ID INT NOT NULL, X INT NOT NULL, Y INT NOT NULL, VAL INT NOT NULL, PRIMARY KEY(ID, X, Y))");
+			s.execute("CREATE TABLE IF NOT EXISTS clients (ID INT NOT NULL PRIMARY KEY AUTO_INCREMENT, X INT, Y INT, W INT, H INT, NAME VARCHAR(64))");
+			s.execute("INSERT INTO clients VALUES (1,0,0,0,0,\"Global\") ON DUPLICATE KEY UPDATE ID=1");
+
+
+		} catch (SQLException e) {
+			System.err.println("Error: " + e.getMessage());
+		}
+
+		try {
 			connectionInfo = new ConnectionInfo(connection);
 			
 		} catch (SQLException | IOException e) {
 			System.err.println("Error: " + e.getMessage());
 		}
 		
-
 		eventBus = vertx.eventBus();
 		eventBus.registerHandler("database", new IncomingDataHandler());
 		eventBus.registerHandler("step", new StepHandler());
 
-		System.out.println("database verticle started");
+		System.out.println("Database verticle started.");
 	}
 
 	class IncomingDataHandler implements Handler<Message<JsonObject>> {
