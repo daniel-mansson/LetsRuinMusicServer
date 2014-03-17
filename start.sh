@@ -1,1 +1,1 @@
-"./depends/vert.x-2.1RC1/bin/vertx" run lrm.verticles.Starter -cp "bin:depends/mysql-connector-java-5.1.20-bin.jar" -conf "./config/config.json"
+"./depends/vert.x-2.1RC1/bin/vertx" run lrm.verticles.Starter -cp "bin:depends/mysql-connector-java-5.1.20-bin.jar:depends/slf4j/slf4j-api-1.7.6.jar:depends/bonecp/bonecp-0.8.0.RELEASE.jar:depends/guava/guava-10.0.1.jar" -conf "./config/config.json"
