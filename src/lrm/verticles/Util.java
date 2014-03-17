@@ -1,9 +1,14 @@
 package lrm.verticles;
 
 import java.sql.Time;
+import java.text.DateFormat;
 
 public class Util {
+	
+	private static DateFormat date = DateFormat.getDateInstance();
+	
 	public static String now() {
-		return new Time(System.currentTimeMillis()).toString();
+		Time t = new Time(System.currentTimeMillis());
+		return date.format(t) + " " + t.toString();
 	}
 }
