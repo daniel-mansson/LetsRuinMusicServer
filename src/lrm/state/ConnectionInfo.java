@@ -12,10 +12,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.TreeSet;
 
+import com.jolbox.bonecp.BoneCP;
+
 public class ConnectionInfo {
 	private static final String createClientStr = "INSERT INTO clients (X, Y, W, H, NAME) VALUES (?, ?, ?, ?, ?)";
 	private static final String updateClientPosStr = "UPDATE clients SET X=?,Y=? WHERE ID=?";
-	private static final String updateClientFullStr = "UPDATE clients SET X=?,Y=?,W=?,H=?,NAME=? WHERE ID=?";
+	//private static final String updateClientFullStr = "UPDATE clients SET X=?,Y=?,W=?,H=?,NAME=? WHERE ID=?";
 	private static final String deleteClientStr = "DELETE FROM clients WHERE ID = ?";
 	private static final String getStateStr = "SELECT (X,Y,VAL) FROM states WHERE ID=? AND X>=? AND X<? AND Y>=? AND Y<?";
 	//private static final String getStateDiffStr = "SELECT (X,Y,VAL) FROM states WHERE ID=? AND X>=? AND X<? AND Y>=? AND Y<?";
@@ -23,43 +25,61 @@ public class ConnectionInfo {
 			+ "ON DUPLICATE KEY UPDATE VAL=?";
 	private static final String setStateZeroStr = "DELETE FROM states WHERE ID=? AND X=? AND Y=?";
 
-	
-	
-	public ConnectionInfo(Connection connection) throws SQLException, IOException {
-		this.connection = connection;
-		createClient = connection.prepareStatement(createClientStr,
-				Statement.RETURN_GENERATED_KEYS);
-		updateClientPos = connection.prepareStatement(updateClientPosStr);
-		updateClientFull = connection.prepareStatement(updateClientFullStr);
-		deleteClient = connection.prepareStatement(deleteClientStr);
-		getState = connection.prepareStatement(getStateStr);
-		//getStateDiff = connection.prepareStatement(getStateDiffStr);
-		setState = connection.prepareStatement(setStateStr);
-		setStateZero = connection.prepareStatement(setStateZeroStr);
-		
+	private String getGlobalStateDiffStr;
 
+	public final BoneCP connectionPool;
+	public Connection connection;
+	
+	public ConnectionInfo(BoneCP connectionPool) throws SQLException, IOException {
+		this.connectionPool = connectionPool;
+		
 		byte[] encoded = Files.readAllBytes(Paths.get("config/globaldiff.sql"));
-		String getGlobalStateDiffStr = Charset.defaultCharset()
+		getGlobalStateDiffStr = Charset.defaultCharset()
 				.decode(ByteBuffer.wrap(encoded)).toString();
 		
-		getGlobalStateDiff = connection.prepareStatement(getGlobalStateDiffStr);
-		
 	}
-
-	public final Connection connection;
-	public final PreparedStatement createClient;
-	public final PreparedStatement updateClientPos;
-	public final PreparedStatement updateClientFull;
-	public final PreparedStatement deleteClient;
-	public final PreparedStatement getState;
-	//public final PreparedStatement getStateDiff;
-	public final PreparedStatement setState;
-	public final PreparedStatement setStateZero;
-	public final PreparedStatement getGlobalStateDiff;
-
+	
+	public void openConnection() {
+		if(connection == null) {
+			try {
+				connection = connectionPool.getConnection();
+			} catch (SQLException e) {
+				System.out.println("SQL Error(openConnection): " + e.getMessage());
+				connection = null;
+			} 
+		}
+		else {
+			System.out.println("Logic error(openConnection): " + "Trying to open a new connection when one already exists.");
+		}
+	}
+	
+	public void closeConnection() {
+		if(connection != null) {
+			try {
+				connection.close();
+				connection = null;
+			} catch (SQLException e) {
+				System.out.println("SQL Error(closeConnection): " + e.getMessage());
+			} 
+		}
+		else {
+			System.out.println("Logic error(openConnection): " + "Trying to close a connection when there is none.");
+		}
+	}
+	
 	// Returns id
 	public int createClient(int x, int y, int w, int h, String name) {
+		PreparedStatement createClient;
 		try {
+			createClient = connection.prepareStatement(createClientStr,
+					Statement.RETURN_GENERATED_KEYS);
+
+		} catch (SQLException e) {
+			System.out.println("SQL Error(createClient): " + e.getMessage());
+			return -1;
+		}
+		
+		try {			
 			createClient.setInt(1, x);
 			createClient.setInt(2, y);
 			createClient.setInt(3, w);
@@ -75,28 +95,64 @@ public class ConnectionInfo {
 				return -1;
 		} catch (SQLException e) {
 			System.out.println("SQL Error(createClient): " + e.getMessage());
+		} finally {
+			try {
+				createClient.close();
+			} catch (SQLException e) {
+				System.out.println("SQL Error(createClient): " + e.getMessage());
+			}
 		}
-
+		
 		return -1;
 	}
 
 	public boolean updateClient(int id, int x, int y) {
+		
+
+		PreparedStatement updateClientPos;
 		try {
+			updateClientPos = connection.prepareStatement(updateClientPosStr);
+		} catch (SQLException e) {
+			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id + "," + x + "," + y + ")  "
+					+ e.getMessage());
+			return false;
+		}
+		
+		try {
+			
 			updateClientPos.setInt(1, x);
 			updateClientPos.setInt(2, y);
 			updateClientPos.setInt(3, id);
 
-			createClient.executeUpdate();
+			updateClientPos.executeUpdate();
 			return true;
 		} catch (SQLException e) {
-			System.out.println("SQL Error(updateClient(id,x,y)): "
+			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id + "," + x + "," + y + ")  "
 					+ e.getMessage());
+		} finally {
+			try {
+				updateClientPos.close();
+			} catch (SQLException e) {
+				System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id + "," + x + "," + y + ")  "
+						+ e.getMessage());
+			}
 		}
 
 		return false;
 	}
 
 	public boolean updateClient(int id, int x, int y, int w, int h, String name) {
+		
+		PreparedStatement updateClientPos;
+		try {
+			updateClientPos = connection.prepareStatement(updateClientPosStr);
+		} catch (SQLException e) {
+			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
+					+ "," + x + "," + y + "," + w + "," + h + "," + name
+					+ ")  " + e.getMessage());
+			return false;
+		}
+		
 		try {
 			updateClientPos.setInt(1, x);
 			updateClientPos.setInt(2, y);
@@ -105,23 +161,47 @@ public class ConnectionInfo {
 			updateClientPos.setString(5, name);
 			updateClientPos.setInt(6, id);
 
-			createClient.executeUpdate();
+			updateClientPos.executeUpdate();
 			return true;
 		} catch (SQLException e) {
-			System.out.println("SQL Error(updateClient(id,x,y,w,h,name)): "
-					+ e.getMessage());
+			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
+					+ "," + x + "," + y + "," + w + "," + h + "," + name
+					+ ")  " + e.getMessage());
+		} finally {
+			try {
+				updateClientPos.close();
+			} catch (SQLException e) {
+				System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
+						+ "," + x + "," + y + "," + w + "," + h + "," + name
+						+ ")  " + e.getMessage());
+			}
 		}
 
 		return false;
 	}
 
 	public boolean deleteClient(int id) {
+
+		PreparedStatement deleteClient;
+		try {
+			deleteClient = connection.prepareStatement(deleteClientStr);
+		} catch (SQLException e) {
+			System.out.println("SQL Error(deleteClient): " + "(" + id + ")" + e.getMessage());
+			return false;
+		}
+		
 		try {
 			deleteClient.setInt(1, id);
 			deleteClient.executeUpdate();
 			return true;
 		} catch (SQLException e) {
-			System.out.println("SQL Error(deleteClient): " + e.getMessage());
+			System.out.println("SQL Error(deleteClient): " + "(" + id + ")" + e.getMessage());
+		} finally {
+			try {
+				deleteClient.close();
+			} catch (SQLException e) {
+				System.out.println("SQL Error(deleteClient): " + "(" + id + ")" + e.getMessage());
+			}
 		}
 
 		return false;
@@ -130,6 +210,15 @@ public class ConnectionInfo {
 	public TreeSet<Cell> getState(int id, int x, int y, int w, int h) {
 		TreeSet<Cell> state = new TreeSet<>();
 
+		PreparedStatement getState;
+		try {
+			getState = connection.prepareStatement(getStateStr);
+		} catch (SQLException e) {
+			System.out.println("SQL Error(getState): " + "(" + id
+					+ "," + x + "," + y + "," + w + "," + h + ") " + e.getMessage());
+			return state;
+		}
+		
 		try {
 			getState.setInt(1, id);
 			getState.setInt(2, x);
@@ -142,7 +231,15 @@ public class ConnectionInfo {
 				state.add(new Cell(rs.getInt(1), rs.getInt(2), rs.getInt(3)));
 			}
 		} catch (SQLException e) {
-			System.out.println("SQL Error(getState): " + e.getMessage());
+			System.out.println("SQL Error(getState): " + "(" + id
+					+ "," + x + "," + y + "," + w + "," + h + ") " + e.getMessage());
+		} finally {
+			try {
+				getState.close();
+			} catch (SQLException e) {
+				System.out.println("SQL Error(getState): " + "(" + id
+						+ "," + x + "," + y + "," + w + "," + h + ") " + e.getMessage());
+			}
 		}
 
 		return state;
@@ -151,6 +248,15 @@ public class ConnectionInfo {
 	public boolean setState(int id, int x, int y, int value) {
 
 		if (value != 0) {
+			PreparedStatement setState;
+			try {
+				setState = connection.prepareStatement(setStateStr);
+			} catch (SQLException e) {
+				System.out.println("SQL Error(setState): " + "(" + id
+						+ "," + x + "," + y + "," + value + ") " + e.getMessage());
+				return false;
+			}
+			
 			try {
 				setState.setInt(1, id);
 				setState.setInt(2, x);
@@ -160,9 +266,27 @@ public class ConnectionInfo {
 				setState.executeUpdate();
 				return true;
 			} catch (SQLException e) {
-				System.out.println("SQL Error(setState): " + e.getMessage());
+				System.out.println("SQL Error(setState): " + "(" + id
+						+ "," + x + "," + y + "," + value + ") " + e.getMessage());
+			} finally {
+				try {
+					setState.close();
+				} catch (SQLException e) {
+					System.out.println("SQL Error(setState): " + "(" + id
+							+ "," + x + "," + y + "," + value + ") " + e.getMessage());
+				}
 			}
 		} else {
+
+			PreparedStatement setStateZero;
+			try {
+				setStateZero = connection.prepareStatement(setStateZeroStr);
+			} catch (SQLException e) {
+				System.out.println("SQL Error(setState): " + "(" + id
+						+ "," + x + "," + y + "," + value + ") " + e.getMessage());
+				return false;
+			}
+			
 			try {
 				setStateZero.setInt(1, id);
 				setStateZero.setInt(2, x);
@@ -170,7 +294,15 @@ public class ConnectionInfo {
 				setStateZero.executeUpdate();
 				return true;
 			} catch (SQLException e) {
-				System.out.println("SQL Error(setState): " + e.getMessage());
+				System.out.println("SQL Error(setState): " + "(" + id
+						+ "," + x + "," + y + "," + value + ") " + e.getMessage());
+			} finally {
+				try {
+					setStateZero.close();
+				} catch (SQLException e) {
+					System.out.println("SQL Error(setState): " + "(" + id
+							+ "," + x + "," + y + "," + value + ") " + e.getMessage());
+				}
 			}
 		}
 
@@ -180,6 +312,14 @@ public class ConnectionInfo {
 	public TreeSet<Cell> getGlobalDiff(int id) {
 		TreeSet<Cell> state = new TreeSet<>();
 
+		PreparedStatement getGlobalStateDiff;
+		try {
+			getGlobalStateDiff = connection.prepareStatement(getGlobalStateDiffStr);
+		} catch (SQLException e) {
+			System.out.println("SQL Error(getGlobalDiff): (" + id + ") " + e.getMessage());
+			return state;
+		}	
+		
 		try {
 			getGlobalStateDiff.setInt(1, id);
 			getGlobalStateDiff.setInt(2, id);
@@ -197,7 +337,13 @@ public class ConnectionInfo {
 					state.add(new Cell(x, y, 0));
 			}
 		} catch (SQLException e) {
-			System.out.println("SQL Error(getGlobalDiff): " + e.getMessage());
+			System.out.println("SQL Error(getGlobalDiff): (" + id + ") " + e.getMessage());
+		} finally {
+			try {
+				getGlobalStateDiff.close();
+			} catch (SQLException e) {
+				System.out.println("SQL Error(getGlobalDiff): (" + id + ") " + e.getMessage());
+			}
 		}
 
 		return state;

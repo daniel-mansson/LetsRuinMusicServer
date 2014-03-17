@@ -7,6 +7,8 @@
 	"database": {
 		"database_driver" : "com.mysql.jdbc.Driver",
 		"database_url" : "jdbc:mysql://localhost:3306/lrm",
-		"database_config" : "config/database.properties"
+		"database_config" : "config/database.properties",
+		"database_user" : "root",
+		"database_password" : ""
 	}
 }

@@ -16,5 +16,7 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="depends/mysql-connector-java-5.1.20-bin.jar"/>
+	<classpathentry kind="lib" path="depends/slf4j/slf4j-api-1.7.6.jar"/>
+	<classpathentry kind="lib" path="depends/guava/guava-10.0.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

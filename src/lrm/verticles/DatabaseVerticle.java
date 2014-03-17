@@ -10,6 +10,8 @@ import java.sql.Statement;
 import java.util.Properties;
 import java.util.TreeMap;
 
+import javax.security.auth.login.AppConfigurationEntry;
+
 import lrm.state.ClientState;
 import lrm.state.ConnectionInfo;
 
@@ -19,13 +21,16 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
 
+import com.jolbox.bonecp.BoneCP;
+import com.jolbox.bonecp.BoneCPConfig;
+
 public class DatabaseVerticle extends Verticle {
 
-	private Connection connection;
 	private ConnectionInfo connectionInfo;
 	private TreeMap<Integer, ClientState> clientStates;
 	private EventBus eventBus;
 	private boolean anyChange;
+	private BoneCP connectionP;
 
 	public DatabaseVerticle() {
 
@@ -35,7 +40,7 @@ public class DatabaseVerticle extends Verticle {
 	public void start() {
 		clientStates = new TreeMap<>();
 		anyChange = true;
-		JsonObject config = new JsonObject();
+		JsonObject config = container.config();
 
 		try {
 			Class.forName(config.getString("database_driver", "com.mysql.jdbc.Driver"));
@@ -54,27 +59,36 @@ public class DatabaseVerticle extends Verticle {
 			System.err.println("Error: " + e.getMessage());
 		}
 
-		String dburl = config.getString("database_url", "jdbc:mysql://localhost:3306/lrm");
+		BoneCPConfig connectionConfig = new BoneCPConfig();
+		connectionConfig.setJdbcUrl(config.getString("database_url", "jdbc:mysql://localhost:3306/lrm")); 
+
+		connectionConfig.setUsername(config.getString("database_user", "sa"));
+		connectionConfig.setPassword(config.getString("database_password", ""));
+		connectionConfig.setMinConnectionsPerPartition(2);
+		connectionConfig.setMaxConnectionsPerPartition(5);
+		connectionConfig.setPartitionCount(1);
+		
 		try {
-			connection = DriverManager.getConnection(dburl, dbprop);
-		}
-		catch (SQLException e) {
+			connectionP = new BoneCP(connectionConfig);
+		} catch (SQLException e) {
 			System.err.println("Error: " + e.getMessage());
 		}
 		
+		
 		try {
+			Connection connection = connectionP.getConnection();
 			Statement s = connection.createStatement();
 			s.execute("CREATE TABLE IF NOT EXISTS states (ID INT NOT NULL, X INT NOT NULL, Y INT NOT NULL, VAL INT NOT NULL, PRIMARY KEY(ID, X, Y))");
 			s.execute("CREATE TABLE IF NOT EXISTS clients (ID INT NOT NULL PRIMARY KEY AUTO_INCREMENT, X INT, Y INT, W INT, H INT, NAME VARCHAR(64))");
 			s.execute("INSERT INTO clients VALUES (1,0,0,0,0,\"Global\") ON DUPLICATE KEY UPDATE ID=1");
-
+			connection.close();
 
 		} catch (SQLException e) {
 			System.err.println("Error: " + e.getMessage());
 		}
 
 		try {
-			connectionInfo = new ConnectionInfo(connection);
+			connectionInfo = new ConnectionInfo(connectionP);
 			
 		} catch (SQLException | IOException e) {
 			System.err.println("Error: " + e.getMessage());
@@ -86,7 +100,7 @@ public class DatabaseVerticle extends Verticle {
 
 		System.out.println("Database verticle started.");
 	}
-
+	
 	class IncomingDataHandler implements Handler<Message<JsonObject>> {
 
 		@Override
