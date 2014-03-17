@@ -9,6 +9,7 @@ Preparation
 ==================
 
 Uses Java 1.7
+
 Unzip the dependencies in the folder depends/
 
 Requires a MySQL server running. 
