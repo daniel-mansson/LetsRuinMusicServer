@@ -1,5 +1,6 @@
 package lrm.verticles;
 
+import java.sql.Time;
 import java.util.TreeMap;
 
 import lrm.socket.NetSocketInfo;
@@ -47,7 +48,7 @@ public class ClientConnector extends Verticle {
 			port = 12001;
 		}
 		webServer.listen(port);
-		System.out.println("Web server listening to port " + port + ".");
+		System.out.println(Util.now() + " Web server listening to port " + port + ".");
 
 		netServer = vertx.createNetServer();
 		netServer.connectHandler(new NetConnectionHandler());
@@ -59,7 +60,7 @@ public class ClientConnector extends Verticle {
 			port = 12002;
 		}
 		netServer.listen(Integer.parseInt(appConfig.getString("net_port")));
-		System.out.println("Net server listening to port " + port + ".");
+		System.out.println(Util.now() + " Net server listening to port " + port + ".");
 
 		eventBus.registerHandler("out", new OutgoingDataHandler());
 
@@ -79,9 +80,10 @@ public class ClientConnector extends Verticle {
 		}).start();
 		
 
-		System.out.println("Client connector started.");
+		System.out.println(Util.now() + " Client connector started.");
 	}
 
+	
 	class WebConnectionHandler implements Handler<ServerWebSocket> {
 
 		public WebConnectionHandler() {
@@ -116,11 +118,11 @@ public class ClientConnector extends Verticle {
 					eventBus.publish("database", msg);
 					
 					sockets.remove(socketInfo.getId());
-					System.out.println("Web socket connection closed (id: " + socketInfo.getId() + ")");
+					System.out.println(Util.now() + " Web socket connection closed (id: " + socketInfo.getId() + ")");
 				}
 			});
 			
-			System.out.println("Web socket connection opened (id: " + socketInfo.getId() + ")");
+			System.out.println(Util.now() + " Web socket connection opened (id: " + socketInfo.getId() + ")");
 		}
 	};
 
@@ -166,9 +168,12 @@ public class ClientConnector extends Verticle {
 		@Override
 		public void handle(Message<JsonObject> msg) {
 			JsonObject response = msg.body();
-			int id = response.getNumber("id").intValue();
+			int id = response.getNumber("id", -1).intValue();
 			response.removeField("id");
-			sockets.get(id).write(response.encode());
+			SocketInfo socket = sockets.get(id);
+			if(socket != null) {
+				socket.write(response.encode());
+			}
 		}
 	}
 }

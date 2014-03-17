@@ -98,7 +98,7 @@ public class DatabaseVerticle extends Verticle {
 		eventBus.registerHandler("database", new IncomingDataHandler());
 		eventBus.registerHandler("step", new StepHandler());
 
-		System.out.println("Database verticle started.");
+		System.out.println(Util.now() + " Database verticle started.");
 	}
 	
 	class IncomingDataHandler implements Handler<Message<JsonObject>> {

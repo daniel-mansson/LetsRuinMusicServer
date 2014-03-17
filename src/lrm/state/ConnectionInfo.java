@@ -12,6 +12,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.TreeSet;
 
+import lrm.verticles.Util;
+
 import com.jolbox.bonecp.BoneCP;
 
 public class ConnectionInfo {
@@ -49,6 +51,7 @@ public class ConnectionInfo {
 			} 
 		}
 		else {
+			System.out.print(Util.now() + " ");
 			System.out.println("Logic error(openConnection): " + "Trying to open a new connection when one already exists.");
 		}
 	}
@@ -59,10 +62,12 @@ public class ConnectionInfo {
 				connection.close();
 				connection = null;
 			} catch (SQLException e) {
+				System.out.print(Util.now() + " ");
 				System.out.println("SQL Error(closeConnection): " + e.getMessage());
 			} 
 		}
 		else {
+			System.out.print(Util.now() + " ");
 			System.out.println("Logic error(openConnection): " + "Trying to close a connection when there is none.");
 		}
 	}
@@ -75,6 +80,7 @@ public class ConnectionInfo {
 					Statement.RETURN_GENERATED_KEYS);
 
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(createClient): " + e.getMessage());
 			return -1;
 		}
@@ -94,11 +100,13 @@ public class ConnectionInfo {
 			else
 				return -1;
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(createClient): " + e.getMessage());
 		} finally {
 			try {
 				createClient.close();
 			} catch (SQLException e) {
+				System.out.print(Util.now() + " ");
 				System.out.println("SQL Error(createClient): " + e.getMessage());
 			}
 		}
@@ -113,6 +121,7 @@ public class ConnectionInfo {
 		try {
 			updateClientPos = connection.prepareStatement(updateClientPosStr);
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id + "," + x + "," + y + ")  "
 					+ e.getMessage());
 			return false;
@@ -127,12 +136,14 @@ public class ConnectionInfo {
 			updateClientPos.executeUpdate();
 			return true;
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id + "," + x + "," + y + ")  "
 					+ e.getMessage());
 		} finally {
 			try {
 				updateClientPos.close();
 			} catch (SQLException e) {
+				System.out.print(Util.now() + " ");
 				System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id + "," + x + "," + y + ")  "
 						+ e.getMessage());
 			}
@@ -147,6 +158,7 @@ public class ConnectionInfo {
 		try {
 			updateClientPos = connection.prepareStatement(updateClientPosStr);
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
 					+ "," + x + "," + y + "," + w + "," + h + "," + name
 					+ ")  " + e.getMessage());
@@ -164,6 +176,7 @@ public class ConnectionInfo {
 			updateClientPos.executeUpdate();
 			return true;
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
 					+ "," + x + "," + y + "," + w + "," + h + "," + name
 					+ ")  " + e.getMessage());
@@ -186,6 +199,7 @@ public class ConnectionInfo {
 		try {
 			deleteClient = connection.prepareStatement(deleteClientStr);
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(deleteClient): " + "(" + id + ")" + e.getMessage());
 			return false;
 		}
@@ -195,11 +209,13 @@ public class ConnectionInfo {
 			deleteClient.executeUpdate();
 			return true;
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(deleteClient): " + "(" + id + ")" + e.getMessage());
 		} finally {
 			try {
 				deleteClient.close();
 			} catch (SQLException e) {
+				System.out.print(Util.now() + " ");
 				System.out.println("SQL Error(deleteClient): " + "(" + id + ")" + e.getMessage());
 			}
 		}
@@ -214,6 +230,7 @@ public class ConnectionInfo {
 		try {
 			getState = connection.prepareStatement(getStateStr);
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(getState): " + "(" + id
 					+ "," + x + "," + y + "," + w + "," + h + ") " + e.getMessage());
 			return state;
@@ -231,12 +248,14 @@ public class ConnectionInfo {
 				state.add(new Cell(rs.getInt(1), rs.getInt(2), rs.getInt(3)));
 			}
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(getState): " + "(" + id
 					+ "," + x + "," + y + "," + w + "," + h + ") " + e.getMessage());
 		} finally {
 			try {
 				getState.close();
 			} catch (SQLException e) {
+				System.out.print(Util.now() + " ");
 				System.out.println("SQL Error(getState): " + "(" + id
 						+ "," + x + "," + y + "," + w + "," + h + ") " + e.getMessage());
 			}
@@ -252,6 +271,7 @@ public class ConnectionInfo {
 			try {
 				setState = connection.prepareStatement(setStateStr);
 			} catch (SQLException e) {
+				System.out.print(Util.now() + " ");
 				System.out.println("SQL Error(setState): " + "(" + id
 						+ "," + x + "," + y + "," + value + ") " + e.getMessage());
 				return false;
@@ -266,12 +286,14 @@ public class ConnectionInfo {
 				setState.executeUpdate();
 				return true;
 			} catch (SQLException e) {
+				System.out.print(Util.now() + " ");
 				System.out.println("SQL Error(setState): " + "(" + id
 						+ "," + x + "," + y + "," + value + ") " + e.getMessage());
 			} finally {
 				try {
 					setState.close();
 				} catch (SQLException e) {
+					System.out.print(Util.now() + " ");
 					System.out.println("SQL Error(setState): " + "(" + id
 							+ "," + x + "," + y + "," + value + ") " + e.getMessage());
 				}
@@ -282,6 +304,7 @@ public class ConnectionInfo {
 			try {
 				setStateZero = connection.prepareStatement(setStateZeroStr);
 			} catch (SQLException e) {
+				System.out.print(Util.now() + " ");
 				System.out.println("SQL Error(setState): " + "(" + id
 						+ "," + x + "," + y + "," + value + ") " + e.getMessage());
 				return false;
@@ -294,12 +317,14 @@ public class ConnectionInfo {
 				setStateZero.executeUpdate();
 				return true;
 			} catch (SQLException e) {
+				System.out.print(Util.now() + " ");
 				System.out.println("SQL Error(setState): " + "(" + id
 						+ "," + x + "," + y + "," + value + ") " + e.getMessage());
 			} finally {
 				try {
 					setStateZero.close();
 				} catch (SQLException e) {
+					System.out.print(Util.now() + " ");
 					System.out.println("SQL Error(setState): " + "(" + id
 							+ "," + x + "," + y + "," + value + ") " + e.getMessage());
 				}
@@ -316,6 +341,7 @@ public class ConnectionInfo {
 		try {
 			getGlobalStateDiff = connection.prepareStatement(getGlobalStateDiffStr);
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(getGlobalDiff): (" + id + ") " + e.getMessage());
 			return state;
 		}	
@@ -337,11 +363,13 @@ public class ConnectionInfo {
 					state.add(new Cell(x, y, 0));
 			}
 		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(getGlobalDiff): (" + id + ") " + e.getMessage());
 		} finally {
 			try {
 				getGlobalStateDiff.close();
 			} catch (SQLException e) {
+				System.out.print(Util.now() + " ");
 				System.out.println("SQL Error(getGlobalDiff): (" + id + ") " + e.getMessage());
 			}
 		}
