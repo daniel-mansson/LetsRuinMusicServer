@@ -32,6 +32,7 @@ public class DatabaseVerticle extends Verticle {
 	private BoneCP connectionP;
 	private TreeSet<Integer> clientsViewChanged;
 	private TreeSet<Integer> clientsNameChanged;
+	private TreeSet<Integer> clientsDead;
 
 	public DatabaseVerticle() {
 
@@ -41,6 +42,7 @@ public class DatabaseVerticle extends Verticle {
 	public void start() {
 		clientsViewChanged = new TreeSet<>();
 		clientsNameChanged = new TreeSet<>();
+		clientsDead = new TreeSet<>();
 		clientStates = new TreeMap<>();
 		anyChange = true;
 		JsonObject config = container.config();
@@ -115,6 +117,9 @@ public class DatabaseVerticle extends Verticle {
 				if(id >= 0) {
 					clientStates.get(id).destroy();
 					clientStates.remove(id);
+					
+					clientsDead.add(id);
+					anyChange = true;
 				}
 				return;
 			}
@@ -199,6 +204,15 @@ public class DatabaseVerticle extends Verticle {
 					clients.add(entry);
 				}
 			}
+			
+			for(Integer i : clientsDead) {
+				JsonObject entry = new JsonObject();
+				entry.putNumber("id", i);
+				entry.putBoolean("dead", true);
+				clients.add(entry);
+			}
+			
+			clientsDead.clear();
 			clientsViewChanged.clear();
 			clientsNameChanged.clear();
 			
