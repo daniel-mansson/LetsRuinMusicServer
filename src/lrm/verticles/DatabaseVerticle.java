@@ -4,13 +4,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import java.util.TreeMap;
-
-import javax.security.auth.login.AppConfigurationEntry;
+import java.util.TreeSet;
 
 import lrm.state.ClientState;
 import lrm.state.ConnectionInfo;
@@ -18,6 +16,7 @@ import lrm.state.ConnectionInfo;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
 
@@ -31,6 +30,8 @@ public class DatabaseVerticle extends Verticle {
 	private EventBus eventBus;
 	private boolean anyChange;
 	private BoneCP connectionP;
+	private TreeSet<Integer> clientsViewChanged;
+	private TreeSet<Integer> clientsNameChanged;
 
 	public DatabaseVerticle() {
 
@@ -38,6 +39,8 @@ public class DatabaseVerticle extends Verticle {
 
 	@Override
 	public void start() {
+		clientsViewChanged = new TreeSet<>();
+		clientsNameChanged = new TreeSet<>();
 		clientStates = new TreeMap<>();
 		anyChange = true;
 		JsonObject config = container.config();
@@ -119,13 +122,24 @@ public class DatabaseVerticle extends Verticle {
 			if (id >= 0) {
 				ClientState state = clientStates.get(id);
 
+				boolean isNew = false;
 				anyChange = true;
 				if (state == null) {
 					state = new ClientState(id, body, connectionInfo);
 					clientStates.put(id, state);
+					isNew = true;
 				}
-
 				state.performUpdate(body);
+
+				if(body.getObject("view") != null)	
+					clientsViewChanged.add(id);
+
+				if(body.getString("name") != null)	
+					clientsNameChanged.add(id);		
+				
+				if(isNew) {
+					welcome(state);
+				}
 			}
 			else {
 				JsonObject error = new JsonObject();
@@ -136,6 +150,26 @@ public class DatabaseVerticle extends Verticle {
 			}
 		}
 	}
+	
+	private void welcome(ClientState state) {
+		int id = state.getId();
+		
+		JsonObject msg = new JsonObject();
+		JsonArray clients = new JsonArray();
+		
+		for(ClientState s : clientStates.values()) {
+			JsonObject entry  = new JsonObject();
+			entry.putNumber("id", s.getId());
+			entry.putString("name", s.getName());
+			entry.putObject("view", s.getView());
+			clients.add(entry);
+		}
+
+		msg.putNumber("id", id);
+		msg.putNumber("your_id", id);
+		msg.putArray("clients", clients);
+		eventBus.publish("out", msg);		
+	}
 
 	class StepHandler implements Handler<Message<Boolean>> {
 
@@ -145,12 +179,47 @@ public class DatabaseVerticle extends Verticle {
 			if(!anyChange)
 				return;
 			
-			for(ClientState state : clientStates.values()) {
-				JsonObject msg = state.getDiff();
-				if(msg != null)
-					eventBus.publish("out", msg);
+			JsonArray clients = new JsonArray();
+
+			for(ClientState state : clientStates.values()) {		
+				JsonObject entry = new JsonObject();
+				boolean hasData = false;
+				
+				entry.putNumber("id", state.getId());
+				if(clientsNameChanged.contains(state.getId())) {
+					entry.putString("name", state.getName());
+					hasData = true;
+				}
+				if(clientsViewChanged.contains(state.getId())) {
+					entry.putObject("view", state.getView());
+					hasData = true;
+				}
+				
+				if(hasData) {
+					clients.add(entry);
+				}
 			}
+			clientsViewChanged.clear();
+			clientsNameChanged.clear();
 			
+			for(ClientState state : clientStates.values()) {
+
+				JsonObject msg = state.getDiff();
+				
+				if(msg != null) {
+					if(clients.size() > 0)
+						msg.putArray("clients", clients);
+					
+					eventBus.publish("out", msg);
+				}
+				else if(clients.size() > 0){
+					msg = new JsonObject();
+					msg.putNumber("id", state.getId());
+					msg.putArray("clients", clients);
+					eventBus.publish("out", msg);
+				}
+			}
+
 			anyChange = false;
 		}
 	}

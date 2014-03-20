@@ -9,6 +9,6 @@
 		"database_url" : "jdbc:mysql://localhost:3306/lrm",
 		"database_config" : "config/database.properties",
 		"database_user" : "root",
-		"database_password" : ""
+		"database_password" : "05870587"
 	}
 }

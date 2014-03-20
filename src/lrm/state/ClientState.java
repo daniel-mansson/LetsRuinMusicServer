@@ -20,9 +20,14 @@ public class ClientState {
 	public ClientState(int id, JsonObject body, ConnectionInfo connectionInfo) {
 		this.id = id;
 		initialized = false;
+		
+		x = 0;
+		y = 0;
+		w = 16;
+		h = 16;
 
 		this.connectionInfo = connectionInfo;
-		name = body.getString("name", "temp");
+		name = body.getString("name", "unnamed");
 
 		connectionInfo.openConnection();
 		try {
@@ -34,17 +39,35 @@ public class ClientState {
 
 	public void performUpdate(JsonObject body) {
 		JsonArray data = body.getArray("data");
-
+		JsonObject view = body.getObject("view");
+		String name = body.getString("name");
+		
 		connectionInfo.openConnection();
 		try {
-			for (int i = 0; i < data.size(); ++i) {
-				JsonObject obj = data.get(i);
+			if(view != null) {
+				x = view.getInteger("x");
+				y = view.getInteger("y");
+				w = view.getInteger("w");
+				h = view.getInteger("h");
+				
+				connectionInfo.updateClient(databaseId, x, y, w, h);
+			}
+			
+			if(name != null){
+				this.name = name; 
+				connectionInfo.updateClient(databaseId, name);
+			}
 
-				int x = obj.getInteger("x");
-				int y = obj.getInteger("y");
-				int value = obj.getInteger("v");
+			if (data != null) {
+				for (int i = 0; i < data.size(); ++i) {
+					JsonObject obj = data.get(i);
 
-				connectionInfo.setState(0, x, y, value);
+					int x = obj.getInteger("x");
+					int y = obj.getInteger("y");
+					int value = obj.getInteger("v");
+
+					connectionInfo.setState(0, x, y, value);
+				}
 			}
 		} finally {
 			connectionInfo.closeConnection();
@@ -86,11 +109,32 @@ public class ClientState {
 			}
 
 			response.putArray("data", data);
+			
+			
 		} finally {
 			connectionInfo.closeConnection();
 		}
 		
 		return response;
+	}
+	
+	public JsonObject getView() {
+		JsonObject view = new JsonObject();
+
+		view.putNumber("x", x);
+		view.putNumber("y", y);
+		view.putNumber("w", w);
+		view.putNumber("h", h);
+		
+		return view;
+	}
+	
+	public int getId() {
+		return id;
+	}
+	
+	public String getName() {
+		return name;
 	}
 
 	public void destroy() {

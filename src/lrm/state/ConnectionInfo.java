@@ -18,8 +18,8 @@ import com.jolbox.bonecp.BoneCP;
 
 public class ConnectionInfo {
 	private static final String createClientStr = "INSERT INTO clients (X, Y, W, H, NAME) VALUES (?, ?, ?, ?, ?)";
-	private static final String updateClientPosStr = "UPDATE clients SET X=?,Y=? WHERE ID=?";
-	//private static final String updateClientFullStr = "UPDATE clients SET X=?,Y=?,W=?,H=?,NAME=? WHERE ID=?";
+	private static final String updateClientPosStr = "UPDATE clients SET X=?,Y=?,W=?,H=? WHERE ID=?";
+	private static final String updateClientNameStr = "UPDATE clients SET NAME=? WHERE ID=?";
 	private static final String deleteClientStr = "DELETE FROM clients WHERE ID = ?";
 	private static final String getStateStr = "SELECT (X,Y,VAL) FROM states WHERE ID=? AND X>=? AND X<? AND Y>=? AND Y<?";
 	//private static final String getStateDiffStr = "SELECT (X,Y,VAL) FROM states WHERE ID=? AND X>=? AND X<? AND Y>=? AND Y<?";
@@ -114,45 +114,7 @@ public class ConnectionInfo {
 		return -1;
 	}
 
-	public boolean updateClient(int id, int x, int y) {
-		
-
-		PreparedStatement updateClientPos;
-		try {
-			updateClientPos = connection.prepareStatement(updateClientPosStr);
-		} catch (SQLException e) {
-			System.out.print(Util.now() + " ");
-			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id + "," + x + "," + y + ")  "
-					+ e.getMessage());
-			return false;
-		}
-		
-		try {
-			
-			updateClientPos.setInt(1, x);
-			updateClientPos.setInt(2, y);
-			updateClientPos.setInt(3, id);
-
-			updateClientPos.executeUpdate();
-			return true;
-		} catch (SQLException e) {
-			System.out.print(Util.now() + " ");
-			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id + "," + x + "," + y + ")  "
-					+ e.getMessage());
-		} finally {
-			try {
-				updateClientPos.close();
-			} catch (SQLException e) {
-				System.out.print(Util.now() + " ");
-				System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id + "," + x + "," + y + ")  "
-						+ e.getMessage());
-			}
-		}
-
-		return false;
-	}
-
-	public boolean updateClient(int id, int x, int y, int w, int h, String name) {
+	public boolean updateClient(int id, int x, int y, int w, int h) {
 		
 		PreparedStatement updateClientPos;
 		try {
@@ -160,7 +122,7 @@ public class ConnectionInfo {
 		} catch (SQLException e) {
 			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
-					+ "," + x + "," + y + "," + w + "," + h + "," + name
+					+ "," + x + "," + y + "," + w + "," + h
 					+ ")  " + e.getMessage());
 			return false;
 		}
@@ -170,22 +132,58 @@ public class ConnectionInfo {
 			updateClientPos.setInt(2, y);
 			updateClientPos.setInt(3, w);
 			updateClientPos.setInt(4, h);
-			updateClientPos.setString(5, name);
-			updateClientPos.setInt(6, id);
+			updateClientPos.setInt(5, id);
 
 			updateClientPos.executeUpdate();
 			return true;
 		} catch (SQLException e) {
 			System.out.print(Util.now() + " ");
 			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
-					+ "," + x + "," + y + "," + w + "," + h + "," + name
+					+ "," + x + "," + y + "," + w + "," + h 
 					+ ")  " + e.getMessage());
 		} finally {
 			try {
 				updateClientPos.close();
 			} catch (SQLException e) {
 				System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
-						+ "," + x + "," + y + "," + w + "," + h + "," + name
+						+ "," + x + "," + y + "," + w + "," + h
+						+ ")  " + e.getMessage());
+			}
+		}
+
+		return false;
+	}
+
+	public boolean updateClient(int id, String name) {
+		
+		PreparedStatement updateClientPos;
+		try {
+			updateClientPos = connection.prepareStatement(updateClientNameStr);
+		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
+			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
+					+ "," + name
+					+ ")  " + e.getMessage());
+			return false;
+		}
+		
+		try {
+			updateClientPos.setString(1, name);
+			updateClientPos.setInt(2, id);
+
+			updateClientPos.executeUpdate();
+			return true;
+		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
+			System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
+					+ "," + name
+					+ ")  " + e.getMessage());
+		} finally {
+			try {
+				updateClientPos.close();
+			} catch (SQLException e) {
+				System.out.println("SQL Error(updateClient(id,x,y)): " + "(" + id
+						+ "," + name
 						+ ")  " + e.getMessage());
 			}
 		}
