@@ -1,6 +1,5 @@
 package lrm.verticles;
 
-import java.sql.Time;
 import java.util.TreeMap;
 
 import lrm.socket.NetSocketInfo;

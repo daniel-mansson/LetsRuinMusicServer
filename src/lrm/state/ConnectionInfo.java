@@ -21,6 +21,7 @@ public class ConnectionInfo {
 	private static final String updateClientPosStr = "UPDATE clients SET X=?,Y=?,W=?,H=? WHERE ID=?";
 	private static final String updateClientNameStr = "UPDATE clients SET NAME=? WHERE ID=?";
 	private static final String deleteClientStr = "DELETE FROM clients WHERE ID = ?";
+	private static final String deleteClientStateStr = "DELETE FROM states WHERE ID = ?";
 	private static final String getStateStr = "SELECT (X,Y,VAL) FROM states WHERE ID=? AND X>=? AND X<? AND Y>=? AND Y<?";
 	//private static final String getStateDiffStr = "SELECT (X,Y,VAL) FROM states WHERE ID=? AND X>=? AND X<? AND Y>=? AND Y<?";
 	private static final String setStateStr = "INSERT INTO states (ID,X,Y,VAL) VALUES (?,?,?,?) "
@@ -201,10 +202,22 @@ public class ConnectionInfo {
 			System.out.println("SQL Error(deleteClient): " + "(" + id + ")" + e.getMessage());
 			return false;
 		}
+
+		PreparedStatement deleteState;
+		try {
+			deleteState = connection.prepareStatement(deleteClientStateStr);
+		} catch (SQLException e) {
+			System.out.print(Util.now() + " ");
+			System.out.println("SQL Error(deleteClient): " + "(" + id + ")" + e.getMessage());
+			return false;
+		}
 		
 		try {
 			deleteClient.setInt(1, id);
 			deleteClient.executeUpdate();
+			
+			deleteState.setInt(1, id);
+			deleteState.executeUpdate();
 			return true;
 		} catch (SQLException e) {
 			System.out.print(Util.now() + " ");
