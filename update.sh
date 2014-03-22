@@ -1,0 +1,5 @@
+git stash
+git pull
+git stash pop
+ant compile
+sh start.sh
